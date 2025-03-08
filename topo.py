@@ -3,8 +3,11 @@ from mininet.net import Mininet
 from mininet.cli import CLI
 from mininet.log import setLogLevel
 from mininet.link import TCLink
+from mininet.node import Ryu  
+from mininet.node import OVSController 
+from mininet.node import RemoteController
 
-class MyTopo(Topo): 
+class MyTopo(Topo):
     def __init__(self):
         Topo.__init__(self)
 
@@ -34,34 +37,19 @@ class MyTopo(Topo):
         self.addLink(s3, s4)
         self.addLink(h6, s4)
         self.addLink(h7, s4)
+        
 
-def run_experiment():
+
+
+def run():
     topo = MyTopo()
-    net = Mininet(topo=topo, link=TCLink)
+    net = Mininet(topo=topo, link=TCLink, controller=RemoteController)
     net.start()
-
-    # Set congestion control schemes
-    protocols = ['cubic', 'vegas', 'htcp']
-    for protocol in protocols:
-        print(f"Testing {protocol}...")
-        # Configure congestion control on all hosts
-        for host in net.hosts:
-            host.cmd(f'sysctl -w net.ipv4.tcp_congestion_control={protocol}')
-
-        # Run iperf3 server on H7
-        h7 = net.get('h7')
-        h7.cmd('iperf3 -s &')
-
-        # Run iperf3 clients on H1-H6
-        for i in range(1, 7):
-            host = net.get(f'h{i}')
-            host.cmd(f'iperf3 -c {h7.IP()} -b 10M -P 10 -t 150 -C {protocol} &')
-
-        # Wait for experiments to complete
-        CLI(net)  # Use CLI to interact with the network
-
+    CLI(net)
     net.stop()
 
 if __name__ == '__main__':
     setLogLevel('info')
-    run_experiment()
+    run()
+
+    
